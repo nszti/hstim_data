@@ -3,21 +3,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Load the fluorescence traces and iscell array
-F = np.load('../suite2p_tiff5/suite2p/plane0/F.npy', allow_pickle=True)
-iscell = np.load('../suite2p_tiff5/suite2p/plane0/iscell.npy', allow_pickle=True)
+F = np.load('file_path', allow_pickle=True)
+iscell = np.load('file_path', allow_pickle=True)
 
 # Define baseline duration
 baseline_duration = 310  # Duration in milliseconds
 
 # Specify the output directory
-output_dir = '../suite2p_tiff5/baselinesearch'
+output_dir = 'output_path/output_file_name'
 
 # create output dir
 os.makedirs(output_dir, exist_ok=True)
 #ell.
 cellcount = 0
 # Open a file to save the output
-output_file = os.path.join(output_dir, 'roi_output.txt')
+output_file = os.path.join(output_dir, 'output_file_name.txt')
 with open(output_file, 'w') as file:
     # iterate through all rois
     for cell_index, (fluorescence_trace, (iscell_value, _)) in enumerate(zip(F, iscell)):
@@ -50,7 +50,7 @@ with open(output_file, 'w') as file:
             
            
             # save plot as png
-            plot_file = os.path.join(output_dir, 'roi_plot_{}.png'.format(cell_index))
+            plot_file = os.path.join(output_dir, 'output_plot_name_{}.png'.format(cell_index))
             plt.savefig(plot_file)
             plt.close()  # closeing--> no display
            
