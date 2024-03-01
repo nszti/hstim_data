@@ -75,7 +75,7 @@ electrode_df = pd.DataFrame({'electrode med x': [x_value], 'electrode med y': [y
 result_df = pd.DataFrame({
     'ROI_Number': roi_numbers,
     'Med_Values': med_values,
-    'start_and_end_cell_number': [f"{start_roi}-{roi}" for roi in roi_numbers],
+#    'start_and_end_cell_number': [f"{start_roi}-{roi}" for roi in roi_numbers],
     'distance': distances
     
 })
