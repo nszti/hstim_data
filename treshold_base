@@ -1,0 +1,72 @@
+#roi_thresholds list, roi_results--> thr values for each tuple, exceedence check results
+#each roi: roi_thresholds list, roi_results list--> stores the threshold values for each tuple, stores the results of the exceedance check for each tuple.
+#lists: appended to threshold_list and results_list--> which store the threshold values and results for all rois
+#threshold_list and results_list--> converted & saved to npy
+
+import os
+import numpy as np
+
+# Load the fluorescence traces and iscell array
+F = np.load('C:/Users/nguye/Documents/Hyperstim/suite2p_tiff6/suite2p/plane0/F.npy', allow_pickle=True)
+iscell = np.load('C:/Users/nguye/Documents/Hyperstim/suite2p_tiff6/suite2p/plane0/iscell.npy', allow_pickle=True)
+
+output_file_path = 'C:/Users/nguye/Documents/Hyperstim/suite2p_tiff6'
+
+# Define time block duration in milliseconds
+time_block = 217  # 35030 lenne
+
+# Calculate TIFF trigger start and end tuples
+num_tif_triggers = int(len(F[0]) / time_block)
+tif_triggers = []
+
+for i in range(num_tif_triggers):
+    start_time = i * time_block
+    end_time = start_time + time_block
+    tif_triggers.append((start_time, end_time))
+
+# Define baseline duration
+baseline_duration = 310  # Duration in milliseconds
+
+# Create an empty list to store threshold values for each ROI and tuple
+threshold_list = []
+
+# Create an empty list to store results for each ROI and tuple
+results_list = []
+
+# Iterate through all ROIs
+for cell_index, (fluorescence_trace, (iscell_value, _)) in enumerate(zip(F, iscell)):
+    # Create lists to store threshold and results for the current ROI
+    roi_thresholds = []
+    roi_results = []
+    # Iterate through all TIFF triggers
+    for tif_trigger in tif_triggers:
+        # Extract start and end time stamps for the current tuple
+        start_time, end_time = tif_trigger
+        # Calculate baseline traces for the current tuple
+        baseline_trace = fluorescence_trace[start_time:end_time]
+        # Calculate standard deviation for the baseline trace
+        baseline_std = np.std(baseline_trace)
+        # Calculate threshold for the current tuple
+        threshold = baseline_std * 3
+        # Append threshold to the list for the current ROI
+        roi_thresholds.append(threshold)
+        # Check if fluorescence exceeds threshold for the current tuple
+        exceed_threshold = any(value > threshold for value in baseline_trace)
+        # Append result (1 or 0) to the list for the current ROI
+        roi_results.append(int(exceed_threshold))
+    # Append threshold values and results for the current ROI to the overall lists
+    threshold_list.append(roi_thresholds)
+    results_list.append(roi_results)
+
+# Convert the lists of threshold values and results to NumPy arrays
+threshold_array = np.array(threshold_list)
+results_array = np.array(results_list)
+
+# Save the threshold_array and results_array to npy files if needed
+#np.save('threshold_array.npy', threshold_array)
+#np.save('results_array.npy', results_array)
+print(threshold_array)
+print(results_array)
+if (results_array ==0).any():
+    print("theres 0")
+print("only 1 :(((((")
