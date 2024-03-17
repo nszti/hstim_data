@@ -1,0 +1,38 @@
+import os
+import numpy as np
+from scipy.stats import zscore21
+# Load the fluorescence traces and iscell array
+F = np.load('C:/Users/nguye/Documents/Hyperstim/suite2p_tiff6/suite2p/plane0/F.npy', allow_pickle=True)
+iscell = np.load('C:/Users/nguye/Documents/Hyperstim/suite2p_tiff6/suite2p/plane0/iscell.npy', allow_pickle=True)
+
+output_file_path= 'C:/Users/nguye/Documents/Hyperstim/suite2p_tiff6'
+# Define baseline duration
+baseline_duration = 310  # Duration in milliseconds
+
+# create empty list to store normalized baseline_diffs
+all_baseline_diffs = []
+
+cellcount = 0
+
+# Iterate through all rois
+for cell_index, (fluorescence_trace, (iscell_value, _)) in enumerate(zip(F, iscell)):
+    # Check iscell==1
+    #if iscell_value == 1:
+        cellcount += 1
+        # Calculate average baseline value
+        baseline_value = np.mean(fluorescence_trace[:baseline_duration])
+        # Calculate differences within baseline duration
+        baseline_diff = ((fluorescence_trace[:baseline_duration] - baseline_value) / baseline_value) * 100
+
+        # append baseline_diffs to list
+        all_baseline_diffs.append(baseline_diff)
+
+# convert the list of baseline_diffs to a npy array
+all_baseline_diffs = np.array(all_baseline_diffs)
+
+# save the output to a text file
+#np.savetxt('output.txt', all_baseline_diffs, fmt='%.6f')
+
+#save output as .npy file
+np.save('all_baseline_as_trace.npy', all_baseline_diffs)
+all_baseline_diffs.shape
