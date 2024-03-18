@@ -7,13 +7,13 @@ import os
 import numpy as np
 
 # Load the fluorescence traces and iscell array
-F = np.load('C:/Users/nguye/Documents/Hyperstim/suite2p_tiff6/suite2p/plane0/F.npy', allow_pickle=True)
-iscell = np.load('C:/Users/nguye/Documents/Hyperstim/suite2p_tiff6/suite2p/plane0/iscell.npy', allow_pickle=True)
+F = np.load('', allow_pickle=True)
+iscell = np.load('', allow_pickle=True)
 
-output_file_path = 'C:/Users/nguye/Documents/Hyperstim/suite2p_tiff6'
+output_dir = ''
 
 # Define time block duration in milliseconds
-time_block = 217  # 35030 lenne
+time_block = 1085  
 
 # Calculate TIFF trigger start and end tuples
 num_tif_triggers = int(len(F[0]) / time_block)
@@ -44,6 +44,8 @@ for cell_index, (fluorescence_trace, (iscell_value, _)) in enumerate(zip(F, isce
         start_time, end_time = tif_trigger
         # Calculate baseline traces for the current tuple
         baseline_trace = fluorescence_trace[start_time:end_time]
+        # Calculate average for baseline
+        baseline_avg = np.mean(fluorescence_trace[:baseline_duration])
         # Calculate standard deviation for the baseline trace
         baseline_std = np.std(baseline_trace)
         # Calculate threshold for the current tuple
@@ -62,11 +64,13 @@ for cell_index, (fluorescence_trace, (iscell_value, _)) in enumerate(zip(F, isce
 threshold_array = np.array(threshold_list)
 results_array = np.array(results_list)
 
-# Save the threshold_array and results_array to npy files if needed
-#np.save('threshold_array.npy', threshold_array)
-#np.save('results_array.npy', results_array)
-print(threshold_array)
-print(results_array)
+# Save the results to a .txt file
+output_file = os.path.join(output_dir, 'threshold_base_test.txt')
+with open(output_file, 'w' ) as f:
+    for roi_i,roi_r in enumerate(results_list):
+        f.write(f'roi: {roi_i +1} : {roi_r}\n')
+    print("txt saved") 
+
+# Results check   
 if (results_array ==0).any():
-    print("theres 0")
-print("only 1 :(((((")
+    print("there are 0s")
