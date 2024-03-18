@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from scipy.stats import zscore21
+from scipy.stats import zscore
 # Load the fluorescence traces and iscell array
 F = np.load('C:/Users/nguye/Documents/Hyperstim/suite2p_tiff6/suite2p/plane0/F.npy', allow_pickle=True)
 iscell = np.load('C:/Users/nguye/Documents/Hyperstim/suite2p_tiff6/suite2p/plane0/iscell.npy', allow_pickle=True)
