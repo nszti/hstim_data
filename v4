@@ -1,0 +1,151 @@
+######v3.2 
+#trace_stim, rest_stim üres--> rosszul sliceoltam 
+# all_trial_ind kell??
+#result print--> mar megint több, mint 5 trialt ir ki
+
+import numpy as np
+
+#load data
+#change this to the normalised baseline array
+F= np.load('D:2P/E/2023_09_25/suite2p/plane0/F.npy', allow_pickle= True)
+iscell = np.load('D:2P/E/2023_09_25/suite2p/plane0/iscell.npy', allow_pickle=True)
+
+#define constant values
+time_block = 1085
+frame_rate = 31
+baseline_duration = 310 #ms
+start_timepoints = [333,336,323,331,332] # ms  #gives the start of the stimulations --> 5 trials calculating from here
+
+#trial info
+stimulation_duration = 1 #s
+resting_period = 2 #s
+num_trials = 5
+
+#conv s to frames
+stim_dur_f = stimulation_duration * frame_rate
+rest_dur_f = resting_period * frame_rate
+
+#calc the stim start timepoints for each trial
+trial_start_times = []
+trial_ind = []
+
+
+# Calculate tiff trigger start and end tuples
+num_tif_triggers = int(len(F[0]) / time_block) 
+tif_triggers = []
+for i in range(num_tif_triggers):
+    start_time = i * time_block
+    end_time = start_time + time_block
+    tif_triggers.append((start_time, end_time))
+
+print(tif_triggers) 
+#----------------------------------eddig ok
+#?-------------------()
+all_trial_start_times = []
+#all_trial_ind =[]   #ebben most nincs semmi
+#iterate through blocks
+for start_time, end_time in tif_triggers:
+    trial_start_times_block = []
+    trial_ind_block = []
+    #iterate through trials
+    for _ in range(num_trials):
+        for start_time_point in start_timepoints:
+            start_index = start_time + start_time_point
+            trial_start_times_block.append(start_index)
+            print(trial_start_times_block)
+            #trial_ind_block.append()
+            start_index += stim_dur_f + rest_dur_f
+        all_trial_start_times.append(trial_start_times_block)
+        #all_trial_ind.append(trial_ind_block)
+#?-------------------()
+#print(all_trial_start_times)
+#print(all_trial_ind)
+
+#lists to store results for EACH roi
+stim_results_roi = []
+rest_results_roi = []
+roi_thresholds = []
+##iterating through each roi
+#for cell_index, (fluo_trace, (iscell_value, _)) in enumerate(zip(F, iscell)):
+for fluo_trace, (iscell_value, _) in zip(F, iscell):
+    #print(fluo_trace.shape, fluo_trace)
+    #list to store results for ONE roi
+    stim_result_list = []
+    rest_result_list = []
+    ##iterate through each timeblock (tiff files)             
+    #for i, tif_trigger in enumerate(tif_triggers):
+    for start_frame, end_frame in tif_triggers:
+        #print(threshold)
+        #start_frame, end_frame = tif_trigger
+#calculating threshold & baseline
+        #-------------------ok  
+        baseline_dur = fluo_trace[start_frame: start_frame + baseline_duration]
+        # Calculate baseline avg
+        baseline_avg = np.mean(baseline_dur)
+        # Calculate standard deviation for the baseline trace
+        baseline_std = np.std(baseline_dur) 
+        # Calculate threshold for the current tuple
+        #print(baseline_std)
+        threshold = baseline_std * 9 + baseline_avg
+        #-------------------ok
+        # append threshold to the list for the current ROI
+        roi_thresholds.append(threshold)       #kell???
+        #print(roi_thresholds)
+        ##lists to store results for each trial within the block
+        stim_trial_results = []
+        rest_trial_results = []
+        #for start_index, (start_trial, end_trial) in zip(all_trial_start_times, all_trial_ind):
+            
+        ##iterate through each trial within the block
+        for i, stim_start_time in enumerate(trial_start_times_block):
+            #print(stim_start_time)
+            #-------------------ok
+            #calculating indices for this trial
+            start_ind = start_frame + stim_start_time
+            end_index_1s = start_frame + (stim_start_time +1)
+            end_index_3s = start_frame + (stim_start_time +3)
+            #print(start_ind, end_index_1s, end_index_3s)
+            #-------------------ok
+            
+            #slice traces to extract stim # rest periods
+            #trace_stim, trace_rest--------- NEM ok
+            
+            trace_stim = fluo_trace[start_ind:end_index_1s]
+            #print(fluo_trace[:,start_ind:end_index_1s ])
+            #print(len(trace_stim), len(trace_rest))
+            #print(fluo_trace[start_ind:end_index_1s])
+            trace_rest = fluo_trace[end_index_1s:end_index_3s]
+            #print(trace_stim) #:((
+            #calculate averages
+            
+            avg_stim = np.mean(trace_stim, axis = 0)
+            avg_rest = np.mean(trace_rest, axis = 0)
+            #threshold condition check
+            #print(threshold, avg_stim)
+            stim_above_thr = np.any(avg_stim > threshold)
+            #print(rest_above_thr)
+            rest_above_thr = np.any(avg_rest > threshold)
+            #append results for this trial
+            stim_trial_results.append(stim_above_thr)
+            #print(rest_trial_results)
+            rest_trial_results.append(rest_above_thr)
+        #append results for this block
+        stim_result_list.append(stim_trial_results)
+        rest_result_list.append(rest_trial_results)
+        #print(stim_trial_results)
+    #append results for this roi
+    stim_results_roi.append(stim_result_list)
+    #print(stim_results)
+    rest_results_roi.append(rest_result_list)
+    
+'''
+# Printing the results for each roi
+for roi_index, (stim_results, rest_results) in enumerate(zip(stim_results_roi, rest_results_roi)):
+    print(f"Results for ROI {roi_index}:")
+    for block_index, (stim_trial_results, rest_trial_results) in enumerate(zip(stim_results, rest_results)):
+        print(f"Time Block {block_index + 1}:")
+        for trial_index, (stim_above_thr, rest_above_thr) in enumerate(zip(stim_trial_results, rest_trial_results)):
+            print(f"Trial {trial_index + 1}: Stim Above Threshold: {stim_above_thr}, Rest Above Threshold: {rest_above_thr}")
+'''            
+            
+
