@@ -1,0 +1,148 @@
+#vsok
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+#F= np.load('D:2P/E/2023_09_25/suite2p/plane0/F.npy', allow_pickle= True)
+F = np.load('D:2P/E/merged_GCaMP6f_23_09_25_3-6_pos_amp/suite2p/plane0/F0.npy', allow_pickle = True)
+stim_start = np.load('D:2P/E/merged_GCaMP6f_23_09_25_3-6_pos_amp/stim_start_times.npy',allow_pickle=True)
+block_frames = np.load('D:2P/E/merged_GCaMP6f_23_09_25_3-6_pos_amp/frameNos.npy',allow_pickle=True)
+stim_duration = np.load('D:2P/E/merged_GCaMP6f_23_09_25_3-6_pos_amp/stimDurations.npy', allow_pickle = True)
+
+
+frame_rate = 31
+num_trials = 5
+start_timepoints = []
+for i in stim_start:
+    start_timepoints.append(i)
+#print(start_timepoints)
+
+time_block = []
+for b in block_frames:
+    time_block.append(b)
+#print(time_block)
+
+stimulation_duration = []
+for s in stim_duration:
+    stimulation_duration.append(s)
+#print(stimulation_duration)
+
+num_blocks = len(time_block)
+#print(num_blocks)
+
+resting_period = 2 
+rest_dur_f = resting_period * frame_rate
+stim_dur_f = []
+end_f =[]
+for s in stimulation_duration:
+    stim_dur_f.append(s*frame_rate)
+    end_f.append(s*frame_rate +rest_dur_f )
+#print(end_f)
+####---------------
+
+####---------------
+
+blocks_start = []
+for i in range(len(time_block)):
+    start_time = i*time_block[i - 1] 
+    end_time = start_time + time_block[i]
+    blocks_start.append(start_time)
+#print(blocks_start)   
+
+start_stim_times = []
+
+trial_start_t = []
+trial_end_t = []
+trial_stim_end_t = []
+threshold_block = []
+rest_traces = []
+stim_traces = []
+rest_trace_start = []
+stim_results_roi = []
+rest_results_roi = []
+avgs_stim = []
+avgs_rest = []
+exceed_thr = []
+exceed_res_roi = []
+stim_trial_results = []
+rest_trial_results = []
+for fluo_trace in (F):
+    stim_result_list =[]
+    rest_result_list = []
+    for i  in range(num_blocks):
+        block_start = tif_triggers[i]
+        #block stim_start_time
+        baseline_dur = fluo_trace[block_start: block_start + start_timepoints[i]]
+        baseline_avg = np.mean(baseline_dur)
+        #print(baseline_avg)
+        baseline_std = np.std(baseline_dur)
+        threshold = baseline_std * 9 + baseline_avg
+        #print(threshold)
+        trace = fluo_trace[block_start: block_start+time_block[i]]
+        exceed_thr = any(trace > threshold)
+        #print(exceed_thr)
+        
+
+        
+        avgs_stim_trial = []
+        avgs_rest_trial = []
+        for j in range(num_trials):
+            trial_start = blocks_start[i] + (start_timepoints[i] + j * end_f[i])
+            #print(trial_start)
+            #trial_start_t.append(trial_start)
+            trial_end = trial_start +  stim_dur_f[i]
+            #trial_end_t.append(trial_end)
+            #print(trial_end)
+            stim_trace = fluo_trace[trial_start:trial_end]
+            #print(stim_trace)
+            avg_stim = np.mean(stim_trace)
+            avgs_stim_trial.append(avg_stim)
+            #print(avg_stim)
+            avgs_stim.append(avg_stim)
+            stim_traces.append(stim_trace)
+            #rest_trace_start = trial_end[j-1] if j > 0 else trial_start[0] 
+            #rest_trace = fluo_trace[rest_trace_start:trial_start[j]]
+            avg_rest = np.mean(rest_trace)
+            avgs_rest_trial.append(avg_rest)
+            avgs_rest.append(avg_rest)
+            rest_traces.append(rest_trace)
+            #thr check for trial
+            
+            if avg_stim > threshold:
+                stim_above_thr = True
+            else:
+                stim_above_thr = False
+            #print(stim_above_thr)
+            if avg_rest > threshold:
+                rest_above_thr = True
+            else:
+                rest_above_thr = False
+            #stim_above_thr = avg_stim >= threshold
+            #rest_above_thr = avg_rest >= threshold
+            #stim_above_thr = np.any(stim_trace > threshold)
+            #rest_above_thr = np.any(rest_trace > threshold)
+            #thr check for any
+            
+            stim_trial_results.append(stim_above_thr)
+            rest_trial_results.append(rest_above_thr)
+        
+        #avgs_stim_blocks[i].append(avgs_stim_trial)
+        #avgs_rest_blocks[i].append(avgs_rest_trial)
+        
+        stim_result_list.append(stim_trial_results)
+        rest_result_list.append(rest_trial_results)
+    stim_results_roi.append(stim_result_list)
+    rest_results_roi.append(rest_result_list)
+
+#avgs_stim = [np.concatenate(block) for block in avgs_stim_blocks]
+#avgs_rest = [np.concatenate(block) for block in avgs_rest_blocks]    
+
+for roi_index, (stim_results, rest_results) in enumerate(zip(stim_results_roi, rest_results_roi)):
+    if roi_index < 10:
+        print(f"Results for ROI {roi_index}:")
+        for block_index, (stim_trial_results, rest_trial_results) in enumerate(zip(stim_result_list, rest_result_list)):
+            print(f"Time Block {block_index+1}:")
+            for trial_index, (stim_above_thr, rest_above_thr) in enumerate(zip(stim_trial_results, rest_trial_results)):
+                print(f"Trial {trial_index+1}: Stim Above Threshold: {stim_above_thr}, Rest Above Threshold: {rest_above_thr}")
+    else:
+        print(f"A")
